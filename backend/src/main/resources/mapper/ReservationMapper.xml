@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.classroom.mapper.ReservationMapper">
+  <select id="countConflictForUpdate" resultType="int">
+    SELECT COUNT(*)
+    FROM busi_reservation
+    WHERE classroom_id = #{classroomId}
+      AND reservation_date = #{reservationDate}
+      AND status IN (0, 1)
+      AND NOT (slot_end &lt; #{slotStart} OR slot_start &gt; #{slotEnd})
+  </select>
+
+  <select id="selectBoard" resultType="map">
+    SELECT r.id "id", r.classroom_id "classroomId", c.room_number "roomNumber",
+           r.reservation_date "reservationDate", r.slot_start "slotStart",
+           r.slot_end "slotEnd", r.status "status", r.purpose "purpose", u.nickname "applicant"
+    FROM busi_reservation r
+    JOIN busi_classroom c ON c.id = r.classroom_id
+    JOIN sys_user u ON u.id = r.user_id
+    WHERE r.reservation_date BETWEEN #{startDate} AND #{endDate}
+      AND r.status IN (0, 1)
+      <if test="classroomId != null">AND r.classroom_id = #{classroomId}</if>
+    ORDER BY r.reservation_date, c.room_number, r.slot_start
+  </select>
+
+  <select id="selectMine" resultType="map">
+    SELECT r.id "id", r.classroom_id "classroomId", c.room_number "roomNumber",
+           r.reservation_date "reservationDate", r.slot_start "slotStart",
+           r.slot_end "slotEnd", r.status "status", r.purpose "purpose",
+           r.reject_reason "rejectReason", r.create_time "createTime"
+    FROM busi_reservation r
+    JOIN busi_classroom c ON c.id = r.classroom_id
+    WHERE r.user_id = #{userId}
+    ORDER BY r.create_time DESC
+  </select>
+
+  <select id="selectPending" resultType="map">
+    SELECT r.id "id", r.reservation_date "reservationDate", r.slot_start "slotStart",
+           r.slot_end "slotEnd", r.purpose "purpose", u.nickname "applicant",
+           c.room_number "roomNumber", c.capacity "capacity"
+    FROM busi_reservation r
+    JOIN sys_user u ON u.id = r.user_id
+    JOIN busi_classroom c ON c.id = r.classroom_id
+    WHERE r.status = 0
+    ORDER BY r.create_time ASC
+  </select>
+</mapper>
